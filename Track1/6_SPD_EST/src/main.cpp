@@ -14,6 +14,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+// Node tracked by camera
 class CTrkNd
 {
 public:
@@ -83,11 +84,13 @@ CTrkNd::~CTrkNd(void)
 
 }
 
+// compare distance to the camera
 bool cmpDep(CTrkNd oTrkNd1, CTrkNd oTrkNd2)	// used to sort tracking nodes in a list
 {
 	return oTrkNd1.getDep() < oTrkNd2.getDep();
 }
 
+// compare frame count
 bool cmpFrmCnt(CTrkNd oTrkNd1, CTrkNd oTrkNd2)	// used to sort tracking nodes in a list
 {
 	return oTrkNd1.getFrmCnt() < oTrkNd2.getFrmCnt();
@@ -128,58 +131,34 @@ static cv::Point3f bkproj2d23d(cv::Point2f o2dPt, float afProjMat[12], int nLenU
 int main(int argc, char *argv[])
 {
 	// video ID
-	int aiVdo[] = { 1, 2, 3, 4, 5, 6, 7, 8,
-		9, 10, 11, 12, 13, 14, 15, 16,
-		17, 18, 19, 20, 21, 22,
-		23, 24, 25, 26, 27 };
+	int aiVdo[] = {1};
 	std::vector<int> viVdo (aiVdo, aiVdo + sizeof(aiVdo) / sizeof(int) );
 	// camera ID (LocX_Y)
-	std::string astrCam[] = { "Loc1_1", "Loc1_2", "Loc1_3", "Loc1_4", "Loc1_5", "Loc1_6", "Loc1_7", "Loc1_8",
-		"Loc2_1", "Loc2_2", "Loc2_3", "Loc2_4", "Loc2_5", "Loc2_6", "Loc2_7", "Loc2_8",
-		"Loc3_1", "Loc3_2", "Loc3_3", "Loc3_4", "Loc3_5", "Loc3_6",
-		"Loc4_1", "Loc4_2", "Loc4_3", "Loc4_4", "Loc4_5" };
+	std::string astrCam[] = { "video_1" };
 	std::vector<std::string> vstrCam (astrCam, astrCam + sizeof(astrCam) / sizeof(std::string) );
 	// path to Track1 main folder
 	char acTrk1FlrPth[256] = {};
 	std::strcpy(acTrk1FlrPth, "./data/");
 	// window (no. of frames) for the computation of average speed
-	int anSpdWinSz[] = { 15, 15, 15, 15, 15, 15, 15, 15,
-		15, 15, 15, 15, 15, 15, 15, 15,
-		31, 31, 31, 31, 31, 31,
-		31, 31, 31, 31, 31 };
+	int anSpdWinSz[] = { 15 };
 	std::vector<int> vnSpdWinSz (anSpdWinSz, anSpdWinSz + sizeof(anSpdWinSz) / sizeof(int) );
 	// scale for speed
-	float afSpdScl[] = { 1.25f, 1.25f, 1.25f, 1.25f, 1.25f, 1.25f, 1.25f, 1.25f,
-		1.05f, 1.05f, 1.05f, 1.05f, 1.05f, 1.05f, 1.05f, 1.05f,
-		0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f,
-		0.89f, 0.89f, 0.89f, 0.89f, 0.89f };
+	float afSpdScl[] = { 1.25f };
 	std::vector<float> vfSpdScl (afSpdScl, afSpdScl + sizeof(afSpdScl) / sizeof(float) );
 	// maximum threshold for standard deviation of speed to assume constant speed
-	float afSpdStdThld[] = { 70.0f, 70.0f, 70.0f, 70.0f, 70.0f, 70.0f, 70.0f, 70.0f,
-		70.0f, 70.0f, 70.0f, 70.0f, 70.0f, 70.0f, 70.0f, 70.0f,
-		15.0f, 15.0f, 15.0f, 15.0f, 15.0f, 15.0f,
-		5.0f, 5.0f, 5.0f, 5.0f, 5.0f };
+	float afSpdStdThld[] = { 70.0f };
 	std::vector<float> vfSpdStdThld (afSpdStdThld, afSpdStdThld + sizeof(afSpdStdThld) / sizeof(float) );
 	// minimum threshold for speed to apply constant speed strategy 
-	float afSpdLowThld[] = { 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f,
-		10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f,
-		28.0f, 28.0f, 28.0f, 28.0f, 28.0f, 28.0f,
-		18.0f, 18.0f, 18.0f, 18.0f, 18.0f };
+	float afSpdLowThld[] = { 10.0f };
 	std::vector<float> vfSpdLowThld (afSpdLowThld, afSpdLowThld + sizeof(afSpdLowThld) / sizeof(float) );
 	// maximum threshold for speed to assume the car is stopping
-	float afSpdStpThld[] = { 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f,
-		2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f,
-		5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f,
-		5.0f, 5.0f, 5.0f, 5.0f, 5.0f };
+	float afSpdStpThld[] = { 2.0f };
 	std::vector<float> vfSpdStpThld (afSpdStpThld, afSpdStpThld + sizeof(afSpdStpThld) / sizeof(float) );
 	// maximum threshold for propagation of speed for false negatives
-	float afSpdPropFNThld [] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-		30.0f, 30.0f, 30.0f, 30.0f, 30.0f, 30.0f,
-		0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+	float afSpdPropFNThld [] = { 0.0f };
 	std::vector<float> vfSpdPropFNThld  (afSpdPropFNThld , afSpdPropFNThld  + sizeof(afSpdPropFNThld) / sizeof(float) );
 	// flag to output a complete video sequence
-	bool bOutVdoFlg = false;
+	bool bOutVdoFlg = true;
 	cv::VideoWriter oVdoWrt;
 	// flag to output plotted images (disable will accelerate the processing speed a lot)
 	bool bOutTrk3dImgFlg = false;
@@ -206,9 +185,10 @@ int main(int argc, char *argv[])
 		std::strcpy(acOutVdoPth, acTrk1FlrPth);
 		std::strcpy(acOutVdoNm, "track1.avi");
 		std::strcat(acOutVdoPth, acOutVdoNm);
-		oVdoWrt = cv::VideoWriter(acOutVdoPth, CV_FOURCC('M', 'P', '4', '2'), fFrmRt, oFrmSz);
+		oVdoWrt = cv::VideoWriter(acOutVdoPth, 	cv::VideoWriter::fourcc('M', 'P', '4', '2'), fFrmRt, oFrmSz);
 	}
 
+	// for every video
 	for (int v = 0; v < viVdo.size(); v++)
 	{
 		// path to the camera folders
@@ -259,6 +239,7 @@ int main(int argc, char *argv[])
 		std::vector<std::vector<CTrkNd> > vvoTrkNdFN;
 
 		// read projection matrix (camera parameters)
+		// read the 4th line of the txt file outputted by camCal component
 		FILE * poCamParamFl = std::fopen(acInCamParamPth, "r");
 		if (poCamParamFl == NULL) { std::fputs("Error: camera parameters not loaded\n", stderr); exit(1); }
 		std::ifstream ifsCamParam;
@@ -292,9 +273,11 @@ int main(int argc, char *argv[])
 		std::ifstream ifsInTrkTxt;
 		ifsInTrkTxt.open(acInTrk2dPth);
 		ifsInTrkTxt.getline(acInTrkBuf, 256);
+		// form a matrix of nodes; each row corresponding to an Tracking ID
+		// also form a matrix of False Negative nodes
 		while (!ifsInTrkTxt.eof())
 		{
-			// read from the input txt file
+			// read one line from the input txt file
 			std::sscanf(acInTrkBuf, "%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%s", &nFrmCnt, &nId,
 				&oBBox.x, &oBBox.y, &oBBox.width, &oBBox.height,
 				&fDetScr, &o3dFtPt.x, &o3dFtPt.y, &o3dFtPt.z, acDetCls);
@@ -304,6 +287,7 @@ int main(int argc, char *argv[])
 			o2dFtPt = cv::Point2f((oBBox.x + (oBBox.width / 2.0f)), (oBBox.y + oBBox.height));
 			o3dFtPt = bkproj2d23d(o2dFtPt, afProjMat);
 			fDep = cv::norm(o3dFtPt);
+			// Create a node from the line read
 			oTrkNd = CTrkNd(nFrmCnt, nId, oBBox, fDetScr, o2dFtPt, o3dFtPt, acDetCls, fDep);
 
 			while (vvoTrkNd.size() < (nId + 1))
@@ -312,6 +296,7 @@ int main(int argc, char *argv[])
 			while (vvoTrkNdFN.size() < (nId + 1))
 				vvoTrkNdFN.push_back(std::vector<CTrkNd>());
 
+			// If detection-score / confidence is greater than the threshhold, then add the node to tracked nodes 
 			if (fDetScrThld < fDetScr)
 				vvoTrkNd[nId].push_back(oTrkNd);
 			else
@@ -327,17 +312,24 @@ int main(int argc, char *argv[])
 		// compute speed
 		int nTrajLen, iSt, iNd, nSpdWinSzUpd;
 		float fDist;
+		// for each node
 		for (int i = 0; i < vvoTrkNd.size(); i++)
 		{
+			// number of frames/nodes to be used for the calculation
 			nTrajLen = vvoTrkNd[i].size();
 			nSpdWinSzUpd = (nTrajLen < vnSpdWinSz[v]) ? nTrajLen : vnSpdWinSz[v];
 			nSpdWinSzUpd = (0 == (nSpdWinSzUpd % 2)) ? (nSpdWinSzUpd - 1) : nSpdWinSzUpd;
 
+			// for every frame/node that can be used
 			for (int j = 0; j < nTrajLen; j++)
 			{
 				fDist = 0.0f;
+				// index of starting frame/node of window
+				// max(j - 0.5w, 0), where j is the current frame, and w is the window size  
 				iSt = j - ((nSpdWinSzUpd - 1) / 2);
 				iSt = (0 <= iSt) ? iSt : 0;
+				// index of ending frame/node of window
+				// min(j + 0.5w, N), where N is the last index of the available frames 
 				iNd = j + ((nSpdWinSzUpd - 1) / 2);
 				iNd = (nTrajLen > iNd) ? iNd : (nTrajLen - 1);
 
@@ -345,6 +337,7 @@ int main(int argc, char *argv[])
 				for (int k = iSt; k < iNd; k++)
 					fDist += cv::norm(vvoTrkNd[i][k].get3dFtPt() - vvoTrkNd[i][k + 1].get3dFtPt());
 
+				// calculate the speed for the current node
 				vvoTrkNd[i][j].setSpd(fDist * fFrmRt * vfSpdScl[v] * 2.23694f / (iNd - iSt));
 			}
 		}
@@ -378,6 +371,7 @@ int main(int argc, char *argv[])
 		float fTrkNdTPDist, fTrkNdTPDistMin;
 		double fSpdConstAvg = 0.0;
 		std::vector<double> vfSpdMean, vfSpdMeanFN, vfSpdStd, vfSpdMeanCls;
+		// Calculate the mean speed
 		for (int i = 0; i < vvoTrkNd.size(); i++)
 		{
 			nTrajLen = vvoTrkNd[i].size();
@@ -519,6 +513,7 @@ int main(int argc, char *argv[])
 		FILE* pfOutTrkTxt = std::fopen(acOutTrkPth, "w");
 		FILE* pfOutTrk3dTxt = std::fopen(acOutTrkPth, "w");
 
+		// for each frame f
 		for (int f = 0; f <= nFrmCntMax; f++)
 		{
 			std::printf("video #%02d: frame #%06d\n", viVdo[v], (f + 1));
@@ -529,16 +524,21 @@ int main(int argc, char *argv[])
 				std::sprintf(acInFrmNm, "%06d.jpg", f);
 				std::strcpy(acInFrmPth, acInFrmFlrPth);
 				std::strcat(acInFrmPth, acInFrmNm);
-				oImgFrm = cv::imread(acInFrmPth, CV_LOAD_IMAGE_COLOR);
+				oImgFrm = cv::imread(acInFrmPth, cv::IMREAD_COLOR);
 			}
 
+			// for each unique object
 			for (int i = 0; i < vvoTrkNd.size(); i++)
 			{
 				nTrajLen = vvoTrkNd[i].size();
+				if (nTrajLen == 0) continue;
+				// if f is in the object's frame range
 				if ((f >= vvoTrkNd[i][0].getFrmCnt()) && (f <= vvoTrkNd[i][nTrajLen - 1].getFrmCnt()))
 				{
+					// for every frame
 					for (int j = 0; j < nTrajLen; j++)
 					{
+						// if the f == object's frame
 						if (f == vvoTrkNd[i][j].getFrmCnt())
 						{
 							// output tracking results in NVIDIA AI City Challenge format
