@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 	// read input frame image
     char acInFrmPth[128] = {};
     std::strcpy(acInFrmPth, oCfg.getInFrmPth());
-	oImgFrm = cv::imread(acInFrmPth, CV_LOAD_IMAGE_COLOR);
+	oImgFrm = cv::imread(acInFrmPth, cv::IMREAD_COLOR);
 
 	// set frame size
 	oFrmSz.width = oImgFrm.cols;

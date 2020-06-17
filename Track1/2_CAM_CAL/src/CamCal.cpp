@@ -1,4 +1,5 @@
 #include "CamCal.h"
+#include "opencv2/imgproc/imgproc_c.h"
 
 CVanLnSel oVanLnSel;
 
@@ -13,7 +14,7 @@ void on_mouse3(int event, int x, int y, int flags, void*)  // mouse event
 		return;
 	}
 
-	if (event == CV_EVENT_FLAG_LBUTTON)
+	if (event == cv::EVENT_FLAG_LBUTTON)
 		oVanLnSel.addNd(x, y);
 
 	return;
@@ -1107,11 +1108,11 @@ void CCamCal::plt3dGrd(CCamParam* poCamParam, cv::Point2f oVr, cv::Point2f oVl, 
 
 	cv::Mat oImgDisp = cv::Mat(cv::Size(1920, (oImgExpn.size().height * 1920 / oImgExpn.size().width)), CV_8UC3);
 	cv::resize(oImgExpn, oImgDisp, oImgDisp.size());
-	cv::namedWindow("3D grid on ground plane", CV_WINDOW_NORMAL);
+	cv::namedWindow("3D grid on ground plane", cv::WINDOW_NORMAL);
 	cv::imshow("3D grid on ground plane", oImgDisp);
 	cv::waitKey(1);
 	//cv::imwrite(".\\data\\3dgrid.jpg", oImgDisp);	// for debug	// in Windows
-	//cv::imwrite("./data/3dgrid.jpg", oImgDisp);	// for debug	// in Linux
+	cv::imwrite("./data/3dgrid.jpg", oImgDisp);	// for debug	// in Linux
 }
 
 CVanLnSel::CVanLnSel(void)
@@ -1149,7 +1150,7 @@ std::vector<cv::Point> CVanLnSel::process(void)
 
 		cv::Mat oImgBg = m_oImgBg.clone();
 
-		cv::namedWindow("selector of vanishing lines", CV_WINDOW_NORMAL);
+		cv::namedWindow("selector of vanishing lines", cv::WINDOW_NORMAL);
 		cv::imshow("selector of vanishing lines", oImgBg);
 		cv::setMouseCallback("selector of vanishing lines", on_mouse3);  // register for mouse event
 
